@@ -21,10 +21,19 @@ namespace ShopProtWeb.Controllers.API
             ApiMessage msg = new ApiMessage() { success = false, data = model };
             try
             {
-                bool success = await model.Install();
+                bool success = await model.FindByUUID();
                 if (success)
                 {
+                    msg.message = "This device had been registered before";
                     msg.success = true;
+                }
+                else
+                {
+                    if (await model.Install())
+                    {
+                        msg.message = "This device have been registered successfully";
+                        msg.success = true;
+                    }
                 }
             }
             catch (Exception e)

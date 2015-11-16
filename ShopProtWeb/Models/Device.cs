@@ -61,6 +61,46 @@ namespace ShopProtWeb.Models
 
             return success;
         }
+
+        public async Task<bool> FindByUUID()
+        {
+            bool success = false;
+            Exception err = null;
+            string sql = "SELECT id FROM dbo.Device WITH (NOLOCK) WHERE uuid LIKE @uuid AND os like @os";
+
+            if (db.State != System.Data.ConnectionState.Open)
+                await db.OpenAsync();
+
+            try
+            {
+                SqlCommand cmd = new SqlCommand(sql, db);
+                cmd.Parameters.AddWithValue("@uuid", uuid);
+                cmd.Parameters.AddWithValue("@os", os);
+                object id = await cmd.ExecuteScalarAsync();
+
+                if (id.GetType() == typeof(string))
+                {
+                    this.id = Guid.Parse(id.ToString());
+                    //this.id = id.ToString();
+                    success = true;
+                }
+            }
+            catch (Exception e)
+            {
+                err = e;
+            }
+            finally
+            {
+                db.Close();
+            }
+
+            if (err != null)
+            {
+                throw err;
+            }
+
+            return success;
+        }
     }
 
     public class User: ShopProtModelBase

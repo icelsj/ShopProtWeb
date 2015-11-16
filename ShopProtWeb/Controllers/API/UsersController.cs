@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ShopProtWeb.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -10,14 +11,19 @@ namespace ShopProtWeb.Controllers.API
 {
     public class UsersController : ApiController
     {
-        /// <summary>
-        ///     Returns just a hello
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<IHttpActionResult> Get()
+        [HttpPost]
+        public async Task<ApiMessage> Post(User model)
         {
-            return Ok("Hello");
+            ApiMessage msg = new ApiMessage() { success = false, data = model };
+            try
+            {
+                
+            }
+            catch (Exception e)
+            {
+                msg.message = e.Message;
+            }
+            return msg;
         }
     }
 }
