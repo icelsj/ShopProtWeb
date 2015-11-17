@@ -21,19 +21,33 @@ namespace ShopProtWeb.Controllers.API
             ApiMessage msg = new ApiMessage() { success = false, data = model };
             try
             {
-                bool success = await model.FindByUUID();
-                if (success)
-                {
-                    msg.message = "This device had been registered before";
-                    msg.success = true;
+                if (ModelState.IsValid)
+                { 
+                    //preset default value
+                    if (model.installed_at < DateTime.Parse("1/1/1690"))
+                    {
+                        model.installed_at = DateTime.Parse("1/1/1690");
+                    }
+
+                    bool success = await model.FindByUUID();
+                    if (success)
+                    {
+                        await model.FindByID();
+                        msg.message = "This device had been registered before";
+                        msg.success = true;
+                    }
+                    else
+                    {
+                        if (await model.Install())
+                        {
+                            msg.message = "This device has been registered successfully";
+                            msg.success = true;
+                        }
+                    }
                 }
                 else
                 {
-                    if (await model.Install())
-                    {
-                        msg.message = "This device have been registered successfully";
-                        msg.success = true;
-                    }
+                    msg.message = "data is not completed";
                 }
             }
             catch (Exception e)

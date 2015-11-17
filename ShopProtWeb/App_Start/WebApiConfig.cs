@@ -26,6 +26,12 @@ namespace ShopProtWeb
                 routeTemplate: "api/{controller}/{id}",
                 defaults: new { id = RouteParameter.Optional }
             );
+
+            //config.Routes.MapHttpRoute(
+            //    name: "LinkDeviceApi",
+            //    routeTemplate: "api/Users/LinkDevice/{id}",
+            //    defaults: new { id = RouteParameter.Optional, controller ="LinkDevices" }
+            //);
         }
     }
 }
