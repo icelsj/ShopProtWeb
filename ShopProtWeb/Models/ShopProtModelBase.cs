@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Data.SqlClient;
 using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 
 namespace ShopProtWeb.Models
 {
@@ -8,6 +9,7 @@ namespace ShopProtWeb.Models
     {
         [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public SqlConnection db = new SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["ShopprotContext"].ConnectionString);
     }
 

@@ -12,7 +12,7 @@ namespace ShopProtWeb.Controllers.API
     public class DevicesController : ApiController
     {
         /// <summary>
-        ///     Register device
+        ///     Register device only and return with the whole device information where it registered
         /// </summary>
         /// <returns>device_id</returns>
         [HttpPost]

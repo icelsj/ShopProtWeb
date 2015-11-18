@@ -11,6 +11,12 @@ namespace ShopProtWeb.Controllers.API
 {
     public class LinkDevicesController : ApiController
     {
+        /// <summary>
+        ///     Register user and device in 2 scenario 
+        ///     1. Client registered device and user and link them seperately, then client can provide id only for device and user
+        ///     2. Client will register device and user at the same time, then client will need to pass all information without id
+        /// </summary>
+        /// <returns>device_id</returns>
         [HttpPost]
         public async Task<ApiMessage> Post(DeviceOwner model)
         {

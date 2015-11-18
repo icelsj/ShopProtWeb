@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Web.Script.Serialization;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
+using System.Runtime.Serialization;
 
 namespace ShopProtWeb.Models
 {

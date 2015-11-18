@@ -11,6 +11,10 @@ namespace ShopProtWeb.Controllers.API
 {
     public class UsersController : ApiController
     {
+        /// <summary>
+        ///     Register user only and return with the whole user information where it registered
+        /// </summary>
+        /// <returns>device_id</returns>
         [HttpPost]
         public async Task<ApiMessage> Post(User model)
         {
