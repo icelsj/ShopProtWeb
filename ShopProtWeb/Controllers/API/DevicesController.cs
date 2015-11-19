@@ -16,32 +16,41 @@ namespace ShopProtWeb.Controllers.API
         /// </summary>
         /// <returns>device_id</returns>
         [HttpPost]
-        public async Task<ApiMessage> Post(Device model)
+        public async Task<ApiMessage> Post(DeviceRegisterModel model)
         {
             ApiMessage msg = new ApiMessage() { success = false, data = model };
             try
             {
                 if (ModelState.IsValid)
-                { 
-                    //preset default value
-                    if (model.installed_at < DateTime.Parse("1/1/1690"))
-                    {
-                        model.installed_at = DateTime.Parse("1/1/1690");
-                    }
+                {
+                    Device device = new Device(model);
 
-                    bool success = await model.FindByUUID();
+                    bool success = await device.FindByUUID();
                     if (success)
                     {
-                        await model.FindByID();
+                        await device.FindByID();
+
+                        if (model.app_token != null)
+                        {
+                            device.app_token = model.app_token;
+                        }
+                        if (model.user_id != null && model.user_id != Guid.Empty)
+                        {
+                            device.user_id = model.user_id;
+                        }
+
+                        await device.UpdateInstall();
                         msg.message = "This device had been registered before";
                         msg.success = true;
+                        msg.data = device.Return;
                     }
                     else
                     {
-                        if (await model.Install())
+                        if (await device.Install())
                         {
                             msg.message = "This device has been registered successfully";
                             msg.success = true;
+                            msg.data = device.Return;
                         }
                     }
                 }

@@ -16,33 +16,37 @@ namespace ShopProtWeb.Controllers.API
         /// </summary>
         /// <returns>device_id</returns>
         [HttpPost]
-        public async Task<ApiMessage> Post(User model)
+        public async Task<ApiMessage> Post(UserRegisterModel model)
         {
-            ApiMessage msg = new ApiMessage() { success = false, data = model };
+            ApiMessage msg = new ApiMessage() { success = false };
             try
             {
                 if (ModelState.IsValid)
                 {
-                    //preset default value
-                    if (model.dob < DateTime.Parse("1/1/1690"))
+                    UserResponseModel response;
+                    if (!UniTool.VerifyFacebook(model.facebook_id, model.access_token, out response))
                     {
-                        model.dob = DateTime.Parse("1/1/1690");
+                        msg.message = "Sorry, Facebook access token is invalid";
+                        return msg;
                     }
 
-                    bool success = await model.FindByFacebookID();
+                    User user = new User(response);
+                    bool success = await user.FindByFacebookID();
                     if (success)
                     {
-                        await model.FindByID();
+                        await user.FindByID();
                         msg.message = "This user had been registered before";
-                        msg.success = true;
+                        msg.success = false;
+                        msg.data = user.Return;
                     }
                     else
                     {
-                        model.isAnonymous = false;
-                        if (await model.Register())
+                        user.isAnonymous = false;
+                        if (await user.Register())
                         {
                             msg.message = "User has been registered successfully";
                             msg.success = true;
+                            msg.data = user.Return;
                         }
                     }
                 }

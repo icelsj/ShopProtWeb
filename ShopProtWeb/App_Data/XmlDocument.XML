@@ -492,13 +492,13 @@
             </summary>
             <param name="documentPath">The physical path to XML document.</param>
         </member>
-        <member name="M:ShopProtWeb.Controllers.API.DevicesController.Post(ShopProtWeb.Models.Device)">
+        <member name="M:ShopProtWeb.Controllers.API.DevicesController.Post(ShopProtWeb.Models.DeviceRegisterModel)">
             <summary>
                 Register device only and return with the whole device information where it registered
             </summary>
             <returns>device_id</returns>
         </member>
-        <member name="M:ShopProtWeb.Controllers.API.LinkDevicesController.Post(ShopProtWeb.Models.DeviceOwner)">
+        <member name="M:ShopProtWeb.Controllers.API.LinkDevicesController.Post(ShopProtWeb.Models.LinkDeviceRegisterModel)">
             <summary>
                 Register user and device in 2 scenario 
                 1. Client registered device and user and link them seperately, then client can provide id only for device and user
@@ -506,7 +506,7 @@
             </summary>
             <returns>device_id</returns>
         </member>
-        <member name="M:ShopProtWeb.Controllers.API.UsersController.Post(ShopProtWeb.Models.User)">
+        <member name="M:ShopProtWeb.Controllers.API.UsersController.Post(ShopProtWeb.Models.UserRegisterModel)">
             <summary>
                 Register user only and return with the whole user information where it registered
             </summary>
