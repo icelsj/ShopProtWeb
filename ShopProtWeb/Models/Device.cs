@@ -4,7 +4,7 @@ using System.Data.SqlClient;
 using System.Web.Script.Serialization;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
-using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace ShopProtWeb.Models
 {
@@ -13,20 +13,112 @@ namespace ShopProtWeb.Models
     public class Device : ShopProtModelBase
     {
         public Guid id { get; set; }
-        [Required]
         public string uuid { get; set; }
-        [Required]
         public string os { get; set; }
-        [Required]
         public string model { get; set; }
         public DateTime installed_at { get; set; }
-        public DateTime created_at { get; set; }
-        
-        public async Task<bool> Install()
+        public string access_key { get; set; }
+        public string app_token { get; set; }
+        public Guid user_id { get; set; }
+
+        public Device()
+        {
+        }
+
+        public Device(DeviceRegisterModel model)
+        {
+            this.uuid = model.uuid;
+            this.os = model.os;
+            this.model = model.model;
+            this.app_token = model.app_token;
+            this.user_id = model.user_id;
+        }
+
+        public DeviceResponseModel Return
+        {
+            get
+            {
+                return new DeviceResponseModel() { id = this.id, os = this.os, model = this.model, access_key = this.access_key };
+            }
+        }
+
+        private async Task<string> GenerateAccessKey()
+        {
+            string guidstr = "";
+            bool notfound = true;
+            do
+            {
+                Guid g = Guid.NewGuid();
+                guidstr = Convert.ToBase64String(g.ToByteArray());
+                guidstr = guidstr.Replace("=", "");
+                guidstr = guidstr.Replace("+", "");
+                guidstr = guidstr.Replace("-", "");
+                guidstr = guidstr.Replace("/", "");
+                
+                notfound = await this.FindByAccessKey(guidstr, false);
+
+            } while (notfound);
+
+            return guidstr;
+        }
+
+        private async Task<bool> FindByAccessKey(string key, bool replace)
         {
             bool success = false;
             Exception err = null;
-            string sql = "INSERT INTO dbo.Devices (uuid, os, model, installed_at) OUTPUT INSERTED.id VALUES (@uuid,@os,@model,@installed_at)";
+            string sql = "SELECT id, uuid, os, model, installed_at FROM dbo.Devices WITH (NOLOCK) WHERE access_key LIKE @access_key";
+
+            if (db.State != ConnectionState.Open)
+                await db.OpenAsync();
+
+            try
+            {
+                DataTable dt = new DataTable();
+                SqlCommand cmd = new SqlCommand(sql, db);
+                cmd.Parameters.AddWithValue("@access_key", key);
+                SqlDataAdapter adp = new SqlDataAdapter();
+                adp.SelectCommand = cmd;
+                adp.Fill(dt);
+
+                if (dt != null && !dt.HasErrors && dt.Rows.Count > 0)
+                {
+                    if (replace)
+                    {
+                        this.id = (Guid)dt.Rows[0]["id"];
+                        this.uuid = dt.Rows[0]["uuid"].ToString();
+                        this.os = dt.Rows[0]["os"].ToString();
+                        this.model = dt.Rows[0]["model"].ToString();
+                        this.installed_at = (DateTime)dt.Rows[0]["installed_at"];
+                    }
+                    success = true;
+                }
+            }
+            catch (Exception e)
+            {
+                err = e;
+            }
+            finally
+            {
+                db.Close();
+            }
+
+            if (err != null)
+            {
+                throw err;
+            }
+
+            return success;
+        }
+
+        public async Task<bool> Install()
+        {
+            //scope to generate access key first
+            this.access_key = await this.GenerateAccessKey();
+
+            //scope to install device
+            bool success = false;
+            Exception err = null;
+            string sql = "INSERT INTO dbo.Devices (uuid, os, model, access_key, app_token, user_id) OUTPUT INSERTED.id VALUES (@uuid, @os, @model, @access_key, @app_token, @user_id)";
 
             if (db.State != ConnectionState.Open)
                 await db.OpenAsync();
@@ -43,14 +135,69 @@ namespace ShopProtWeb.Models
                 cmd.Parameters.AddWithValue("@uuid", uuid);
                 cmd.Parameters.AddWithValue("@os", os);
                 cmd.Parameters.AddWithValue("@model", model);
-                cmd.Parameters.AddWithValue("@installed_at", installed_at);
+                cmd.Parameters.AddWithValue("@access_key", access_key);
+                if (app_token == null) cmd.Parameters.AddWithValue("@app_token", DBNull.Value); else cmd.Parameters.AddWithValue("@app_token", app_token);
+                if (user_id == Guid.Empty) cmd.Parameters.AddWithValue("@user_id", DBNull.Value); else cmd.Parameters.AddWithValue("@user_id", user_id);
                 object id = await cmd.ExecuteScalarAsync();
 
                 if (id != null && id.GetType() == typeof(Guid))
                 {
                     this.id = ((Guid)id);
                     success = true;
-                    this.created_at = DateTime.Now;
+                }
+
+                trans.Commit();
+            }
+            catch (Exception e)
+            {
+                err = e;
+                trans.Rollback();
+            }
+            finally
+            {
+                db.Close();
+            }
+
+            if (err != null)
+            {
+                throw err;
+            }
+
+            return success;
+        }
+
+        public async Task<bool> UpdateInstall()
+        {
+            //scope to generate access key first
+            this.access_key = await this.GenerateAccessKey();
+
+            //scope to install device
+            bool success = false;
+            Exception err = null;
+            string sql = "UPDATE dbo.Devices SET app_token = @app_token, user_id = @user_id WHERE uuid = @uuid AND os = @os";
+
+            if (db.State != ConnectionState.Open)
+                await db.OpenAsync();
+            SqlTransaction trans = db.BeginTransaction();
+
+            try
+            {
+                if (installed_at == DateTime.MinValue)
+                {
+                    installed_at = DateTime.Now;
+                }
+
+                SqlCommand cmd = new SqlCommand(sql, db, trans);
+                cmd.Parameters.AddWithValue("@uuid", uuid);
+                cmd.Parameters.AddWithValue("@os", os);
+                if (app_token == null) cmd.Parameters.AddWithValue("@app_token", DBNull.Value); else cmd.Parameters.AddWithValue("@app_token", app_token);
+                if (user_id == Guid.Empty) cmd.Parameters.AddWithValue("@user_id", DBNull.Value); else cmd.Parameters.AddWithValue("@user_id", user_id);
+                object id = await cmd.ExecuteScalarAsync();
+
+                if (id != null && id.GetType() == typeof(Guid))
+                {
+                    this.id = ((Guid)id);
+                    success = true;
                 }
 
                 trans.Commit();
@@ -116,7 +263,7 @@ namespace ShopProtWeb.Models
         {
             bool success = false;
             Exception err = null;
-            string sql = "SELECT id, uuid, os, model, installed_at, created_at FROM dbo.Devices WITH (NOLOCK) WHERE id LIKE @id";
+            string sql = "SELECT id, uuid, os, model, installed_at, access_key FROM dbo.Devices WITH (NOLOCK) WHERE id LIKE @id";
 
             if (db.State != ConnectionState.Open)
                 await db.OpenAsync();
@@ -136,8 +283,8 @@ namespace ShopProtWeb.Models
                     this.uuid = dt.Rows[0]["uuid"].ToString();
                     this.os = dt.Rows[0]["os"].ToString();
                     this.model = dt.Rows[0]["model"].ToString();
+                    this.access_key = dt.Rows[0]["access_key"].ToString();
                     this.installed_at = (DateTime)dt.Rows[0]["installed_at"];
-                    this.created_at = (DateTime)dt.Rows[0]["created_at"];
 
                     success = true;
                 }
@@ -160,250 +307,23 @@ namespace ShopProtWeb.Models
         }
     }
 
-    public class User: ShopProtModelBase
+    public class DeviceRegisterModel
     {
-        public Guid id { get; set; }
         [Required]
-        public string facebook_id { get; set; }
-        public DateTime dob { get; set; }
+        public string uuid { get; set; }
         [Required]
-        public Gender gender { get; set; }
+        public string os { get; set; }
         [Required]
-        public string email { get; set; }
-        [Required]
-        public string name { get; set; }
-
-        public bool isAnonymous { get; set; }
-        
-        public async Task<bool> Register()
-        {
-            bool success = false;
-            Exception err = null;
-            string sql = "INSERT INTO dbo.Users (facebook_id, dob, gender, email, name, isAnonymous) OUTPUT INSERTED.id VALUES (@facebook_id, @dob, @gender, @email, @name, @isAnonymous)";
-
-            if (db.State != ConnectionState.Open)
-                await db.OpenAsync();
-            SqlTransaction trans = db.BeginTransaction();
-
-            try
-            {
-                SqlCommand cmd = new SqlCommand(sql, db, trans);
-                cmd.Parameters.AddWithValue("@facebook_id", facebook_id);
-                cmd.Parameters.AddWithValue("@dob", dob);
-                cmd.Parameters.AddWithValue("@gender", gender);
-                cmd.Parameters.AddWithValue("@email", email);
-                cmd.Parameters.AddWithValue("@name", name);
-                cmd.Parameters.AddWithValue("@isAnonymous", isAnonymous);
-                object id = await cmd.ExecuteScalarAsync();
-
-                if (id != null && id.GetType() == typeof(Guid))
-                {
-                    this.id = ((Guid)id);
-                    success = true;
-                }
-
-                trans.Commit();
-            }
-            catch (Exception e)
-            {
-                err = e;
-                trans.Rollback();
-            }
-            finally
-            {
-                db.Close();
-            }
-
-            if (err != null)
-            {
-                throw err;
-            }
-
-            return success;
-        }
-
-        public async Task<bool> FindByFacebookID()
-        {
-            bool success = false;
-            Exception err = null;
-            string sql = "SELECT id FROM dbo.Users WITH (NOLOCK) WHERE facebook_id LIKE @facebook_id AND email like @email";
-
-            if (db.State != ConnectionState.Open)
-                await db.OpenAsync();
-
-            try
-            {
-                SqlCommand cmd = new SqlCommand(sql, db);
-                cmd.Parameters.AddWithValue("@facebook_id", facebook_id);
-                cmd.Parameters.AddWithValue("@email", email);
-                object id = await cmd.ExecuteScalarAsync();
-
-                if (id != null && id.GetType() == typeof(Guid))
-                {
-                    this.id = ((Guid)id);
-                    success = true;
-                }
-            }
-            catch (Exception e)
-            {
-                err = e;
-            }
-            finally
-            {
-                db.Close();
-            }
-
-            if (err != null)
-            {
-                throw err;
-            }
-
-            return success;
-        }
-
-        public async Task<bool> FindByID()
-        {
-            bool success = false;
-            Exception err = null;
-            string sql = "SELECT id, facebook_id, dob, gender, email, name, isAnonymous FROM dbo.Users WITH (NOLOCK) WHERE id LIKE @id";
-
-            if (db.State != ConnectionState.Open)
-                await db.OpenAsync();
-
-            try
-            {
-                DataTable dt = new DataTable();
-                SqlCommand cmd = new SqlCommand(sql, db);
-                cmd.Parameters.AddWithValue("@id", this.id);
-                SqlDataAdapter adp = new SqlDataAdapter();
-                adp.SelectCommand = cmd;
-                adp.Fill(dt);
-
-                if (dt != null && !dt.HasErrors && dt.Rows.Count > 0)
-                {
-                    this.id = (Guid)dt.Rows[0]["id"];
-                    this.facebook_id = dt.Rows[0]["facebook_id"].ToString();
-                    this.dob = (DateTime)dt.Rows[0]["dob"];
-                    this.gender = (Gender)dt.Rows[0]["gender"];
-                    this.email = dt.Rows[0]["email"].ToString();
-                    this.name = dt.Rows[0]["name"].ToString();
-                    this.isAnonymous = (bool)dt.Rows[0]["isAnonymous"];
-
-                    success = true;
-                }
-            }
-            catch (Exception e)
-            {
-                err = e;
-            }
-            finally
-            {
-                db.Close();
-            }
-
-            if (err != null)
-            {
-                throw err;
-            }
-
-            return success;
-        }
+        public string model { get; set; }
+        public string app_token { get; set; }
+        public Guid user_id { get; set; }
     }
 
-    public class DeviceOwner : ShopProtModelBase
+    public class DeviceResponseModel
     {
         public Guid id { get; set; }
-        public Device device { get; set; }
-        public User user { get; set; }
-        public DateTime linked_at { get; set; }
-
-        public async Task<bool> LinkDevice()
-        {
-            bool success = false;
-            Exception err = null;
-            string sql = "INSERT INTO dbo.DeviceOwners (device_id, user_id) OUTPUT INSERTED.id VALUES (@device_id, @user_id)";
-
-            if (db.State != ConnectionState.Open)
-                await db.OpenAsync();
-            SqlTransaction trans = db.BeginTransaction();
-
-            try
-            {
-                SqlCommand cmd = new SqlCommand(sql, db, trans);
-                cmd.Parameters.AddWithValue("@device_id", device.id);
-                cmd.Parameters.AddWithValue("@user_id", user.id);
-                object id = await cmd.ExecuteScalarAsync();
-
-                if (id != null && id.GetType() == typeof(Guid))
-                {
-                    this.id = ((Guid)id);
-                    success = true;
-                    this.linked_at = DateTime.Now;
-                }
-
-                trans.Commit();
-            }
-            catch (Exception e)
-            {
-                err = e;
-                trans.Rollback();
-            }
-            finally
-            {
-                db.Close();
-            }
-
-            if (err != null)
-            {
-                throw err;
-            }
-
-            return success;
-        }
-
-        public async Task<bool> FindByDeviceAndUserId()
-        {
-            bool success = false;
-            Exception err = null;
-            string sql = "SELECT id, linked_at FROM dbo.DeviceOwners WITH (NOLOCK) WHERE device_id LIKE @device_id AND user_id like @user_id";
-
-            if (db.State != ConnectionState.Open)
-                await db.OpenAsync();
-
-            try
-            {
-                DataTable dt = new DataTable();
-                SqlCommand cmd = new SqlCommand(sql, db);
-                cmd.Parameters.AddWithValue("@device_id", this.device.id);
-                cmd.Parameters.AddWithValue("@user_id", this.user.id);
-                SqlDataAdapter adp = new SqlDataAdapter();
-                adp.SelectCommand = cmd;
-                adp.Fill(dt);
-
-                if (dt != null && !dt.HasErrors && dt.Rows.Count > 0)
-                {
-                    this.id = (Guid)dt.Rows[0]["id"];
-                    this.linked_at = (DateTime)dt.Rows[0]["linked_at"];
-
-                    success = true;
-                }
-            }
-            catch (Exception e)
-            {
-                err = e;
-            }
-            finally
-            {
-                db.Close();
-            }
-
-            if (err != null)
-            {
-                throw err;
-            }
-
-            return success;
-        }
-        
+        public string os { get; set; }
+        public string model { get; set; }
+        public string access_key { get; set; }
     }
 }

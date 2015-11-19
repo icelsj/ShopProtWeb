@@ -18,7 +18,7 @@ namespace ShopProtWeb.Controllers.API
         /// </summary>
         /// <returns>device_id</returns>
         [HttpPost]
-        public async Task<ApiMessage> Post(DeviceOwner model)
+        public async Task<ApiMessage> Post(LinkDeviceRegisterModel model)
         {
             ApiMessage msg = new ApiMessage() { success = false, data = model };
             try
@@ -26,17 +26,23 @@ namespace ShopProtWeb.Controllers.API
                 //scenario 1: provided with Device id and User id
                 if (model.user.id != null && model.device.id != null && model.user.id != Guid.Empty && model.device.id != Guid.Empty)
                 {
-                    if (await model.user.FindByID() && await model.device.FindByID())
+                    Device device = new Device() { id = model.device.id };
+                    User user = new User() { id = model.user.id };
+                    if (await user.FindByID() && await device.FindByID())
                     {
-                        if (await model.FindByDeviceAndUserId())
+                        DeviceOwner downer = new DeviceOwner() { user = user, device = device };
+
+                        if (await downer.FindByDeviceAndUserId())
                         {
-                            msg.success = true;
+                            msg.success = false;
                             msg.message = "Device and User had been linked before";
+                            msg.data = downer.Return;
                         }
-                        else if (await model.LinkDevice())
+                        else if (await downer.LinkDevice())
                         {
                             msg.success = true;
                             msg.message = "Device and User is linked successfully";
+                            msg.data = downer.Return;
                         }
                         else
                         {
@@ -50,29 +56,52 @@ namespace ShopProtWeb.Controllers.API
                 }
                 else //scenario 2: register user and device
                 {
+                    Device device = new Device() { uuid = model.device.uuid, os = model.device.os, model = model.device.model, app_token = model.device.app_token, user_id = model.device.user_id };
+                    User user = new User() { facebook_id = model.user.facebook_id, access_token = model.user.access_token };
+
+                    DeviceOwner downer = new DeviceOwner() { user = user, device = device };
+
+                    UserResponseModel response;
+                    if (!UniTool.VerifyFacebook(user.facebook_id, user.access_token, out response))
+                    {
+                        msg.message = "Sorry, Facebook access token is invalid";
+                        return msg;
+                    }
+                    user = new User(response);
+
                     //try find user and device first
                     bool installed = true;
-                    if (!await model.device.FindByUUID())
+                    if (!await device.FindByUUID())
                     {
-                        installed = await model.device.Install();
+                        installed = await device.Install();
                     }
-                    if (installed && !await model.user.FindByFacebookID())
+                    else
                     {
-                        installed = await model.user.Register();
+                        await device.FindByID();
+                    }
+                    if (installed && !await user.FindByFacebookID())
+                    {
+                        installed = await user.Register();
                     }
 
                     //try register user and device first
                     if (installed)
                     {
-                        if (await model.FindByDeviceAndUserId())
+                        if (await downer.FindByDeviceAndUserId())
                         {
                             msg.success = true;
                             msg.message = "Device and User had been linked before";
+                            downer.user = user;
+                            downer.device = device;
+                            msg.data = downer.Return;
                         }
-                        else if (await model.LinkDevice())
+                        else if (await downer.LinkDevice())
                         {
                             msg.success = true;
                             msg.message = "Device and User is linked successfully";
+                            downer.user = user;
+                            downer.device = device;
+                            msg.data = downer.Return;
                         }
                         else
                         {
