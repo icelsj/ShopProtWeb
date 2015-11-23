@@ -182,6 +182,7 @@
     <Compile Include="Models\GroupList.cs" />
     <Compile Include="Models\ItemDictionary.cs" />
     <Compile Include="Models\ItemList.cs" />
+    <Compile Include="Models\Membership.cs" />
     <Compile Include="Models\ShopProtModelBase.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Postman\Postman.cs" />
