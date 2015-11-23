@@ -36,7 +36,7 @@ namespace ShopProtWeb.Controllers.API
                     {
                         await user.FindByID();
                         msg.message = "This user had been registered before";
-                        msg.success = false;
+                        msg.success = true;
                         msg.data = user.Return;
                     }
                     else
