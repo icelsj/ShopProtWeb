@@ -173,6 +173,7 @@
     <Compile Include="Controllers\API\LinkDevicesController.cs" />
     <Compile Include="Controllers\API\PostmanController.cs" />
     <Compile Include="Controllers\API\UsersController.cs" />
+    <Compile Include="Controllers\API\GroupListsController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
