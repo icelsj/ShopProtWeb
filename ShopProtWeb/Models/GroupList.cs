@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace ShopProtWeb.Models
 {
@@ -18,12 +16,33 @@ namespace ShopProtWeb.Models
         public string description { get; set; }
         public GroupStatus status { get; set; }
         public DateTime created_at { get; set; }
+        public Guid device_id { get; set; }
+
+        public GroupList()
+        {
+
+        }
+        
+        public GroupList(GroupListCreateModel model)
+        {
+            this.name = model.name;
+            this.description = model.description;
+            this.status = model.status;
+        }
+
+        public GroupListResponseModel Return
+        {
+            get
+            {
+                return new GroupListResponseModel() { id = this.id, name = this.name, description = this.description, status = this.status };
+            }
+        }
 
         public async Task<bool> Create()
         {
             bool success = false;
             Exception err = null;
-            string sql = "INSERT INTO dbo.GroupList (name, description, status) OUTPUT INSERTED.id VALUES (@name, @description, @status)";
+            string sql = "INSERT INTO dbo.GroupLists (name, description, status, created_by) OUTPUT INSERTED.id VALUES (@name, @description, @status, @created_by)";
 
             if (db.State != ConnectionState.Open)
                 await db.OpenAsync();
@@ -35,6 +54,7 @@ namespace ShopProtWeb.Models
                 cmd.Parameters.AddWithValue("@name", name);
                 cmd.Parameters.AddWithValue("@description", description);
                 cmd.Parameters.AddWithValue("@status", status);
+                cmd.Parameters.AddWithValue("@created_by", device_id);
                 object id = await cmd.ExecuteScalarAsync();
 
                 if (id != null && id.GetType() == typeof(Guid))
@@ -62,5 +82,109 @@ namespace ShopProtWeb.Models
 
             return success;
         }
+
+        public async Task<bool> Update()
+        {
+            bool success = false;
+            Exception err = null;
+            string sql = "UPDATE dbo.GroupLists SET name = @name, description = @description, status = @status WHERE id = @id";
+
+            if (db.State != ConnectionState.Open)
+                await db.OpenAsync();
+            SqlTransaction trans = db.BeginTransaction();
+
+            try
+            {
+                SqlCommand cmd = new SqlCommand(sql, db, trans);
+                cmd.Parameters.AddWithValue("@name", name);
+                cmd.Parameters.AddWithValue("@description", description);
+                cmd.Parameters.AddWithValue("@status", status);
+                cmd.Parameters.AddWithValue("@id", this.id);
+                success = (await cmd.ExecuteNonQueryAsync() > 0) ? true : false;
+                
+                trans.Commit();
+            }
+            catch (Exception e)
+            {
+                err = e;
+                trans.Rollback();
+            }
+            finally
+            {
+                db.Close();
+            }
+
+            if (err != null)
+            {
+                throw err;
+            }
+
+            return success;
+        }
+        
+        public async Task<bool> FindById()
+        {
+            bool success = false;
+            Exception err = null;
+            string sql = "SELECT name, description, status, created_at FROM dbo.GroupLists WITH (NOLOCK) WHERE id LIKE @id";
+
+            if (db.State != ConnectionState.Open)
+                await db.OpenAsync();
+
+            try
+            {
+                DataTable dt = new DataTable();
+                SqlCommand cmd = new SqlCommand(sql, db);
+                cmd.Parameters.AddWithValue("@id", id);
+                SqlDataAdapter adp = new SqlDataAdapter();
+                adp.SelectCommand = cmd;
+                adp.Fill(dt);
+
+                if (dt != null && !dt.HasErrors && dt.Rows.Count > 0)
+                {
+                    this.name = dt.Rows[0]["name"].ToString();
+                    this.description = dt.Rows[0]["description"].ToString();
+                    this.status = (GroupStatus)dt.Rows[0]["status"];
+                    this.created_at = (DateTime)dt.Rows[0]["created_at"];
+                    
+                    success = true;
+                }
+            }
+            catch (Exception e)
+            {
+                err = e;
+            }
+            finally
+            {
+                db.Close();
+            }
+
+            if (err != null)
+            {
+                throw err;
+            }
+
+            return success;
+        }
+
+    }
+
+    public class GroupListCreateModel
+    {
+        [Required]
+        public string name { get; set; }
+        [Required]
+        public string description { get; set; }
+        [Required]
+        public GroupStatus status { get; set; }
+    }
+
+    public class GroupListResponseModel
+    {
+        public Guid id { get; set; }
+        public string name { get; set; }
+        public string description { get; set; }
+        public GroupStatus status { get; set; }
+        public DateTime created_at { get; set; }
     }
 }

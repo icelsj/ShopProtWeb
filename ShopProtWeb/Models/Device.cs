@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
-using System.Web.Script.Serialization;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
 using Newtonsoft.Json;
@@ -62,11 +61,11 @@ namespace ShopProtWeb.Models
             return guidstr;
         }
 
-        private async Task<bool> FindByAccessKey(string key, bool replace)
+        internal async Task<bool> FindByAccessKey(string key, bool replace)
         {
             bool success = false;
             Exception err = null;
-            string sql = "SELECT id, uuid, os, model, installed_at FROM dbo.Devices WITH (NOLOCK) WHERE access_key LIKE @access_key";
+            string sql = "SELECT id, uuid, os, model, installed_at FROM dbo.Devices WITH (NOLOCK) WHERE access_key = @access_key";
 
             if (db.State != ConnectionState.Open)
                 await db.OpenAsync();
