@@ -61,57 +61,63 @@ namespace ShopProtWeb.Controllers
             return msg;
         }
 
-        //[HttpPut]
-        //[HttpPatch]
-        //public async Task<ApiMessage> Put (Guid id, GroupListCreateModel model)
-        //{
-        //    ApiMessage msg = new ApiMessage() { success = false };
-        //    GroupList group = new GroupList(model);
-        //    IEnumerable<string> xAccessKey;
-        //    bool hasKey = Request.Headers.TryGetValues("X-Access-Key", out xAccessKey);
-        //    bool authorized = false;
+        [HttpPut]
+        [HttpPatch]
+        public async Task<ApiMessage> Put(Guid id, GroupListCreateModel model)
+        {
+            ApiMessage msg = new ApiMessage() { success = false };
+            GroupList group = new GroupList(model);
+            IEnumerable<string> xAccessKey;
+            bool hasKey = Request.Headers.TryGetValues("X-Access-Key", out xAccessKey);
+            bool authorized = false;
 
-        //    if (hasKey)
-        //    {
-        //        Device device = new Device() { access_key = xAccessKey.First() };
-        //        authorized = await device.FindByAccessKey(device.access_key, true);
-        //        group.device_id = device.id;
-        //    }
+            if (hasKey)
+            {
+                Device device = new Device() { access_key = xAccessKey.First() };
+                authorized = await device.FindByAccessKey(device.access_key, true);
+                group.device_id = device.id;
 
-        //    if (hasKey && authorized)
-        //    {
-        //        if (ModelState.IsValid)
-        //        {
-        //            group.id = id;
-        //            bool success = await group.FindById();
-        //            if (success)
-        //            {
-        //                Membership member = new Membership() { device_id = group.device_id, group_id = group.id };
-        //                success = await member.FindByDeviceIdAndGroupId();
-        //            }
+                group.id = id;
+                bool hasauthorized = await group.FindById();
+                Membership member = new Membership() { device_id = group.device_id, group_id = group.id };
+                if (hasauthorized)
+                { 
+                    authorized = await member.FindByDeviceIdAndGroupId();
+                    authorized = member.status == MembershipStatus.Admin ? true : false;
+                }
+            }
 
-        //            if (success)
-        //            {
-        //                msg.message = "Group is created successfully";
-        //                msg.success = true;
-        //                msg.data = group.Return;
-        //            }
-        //            else
-        //            {
-        //                msg.message = "Failed to update group";
-        //            }
-        //        }
-        //        else
-        //        {
-        //            msg.message = "Data is not completed";
-        //        }
-        //    }
-        //    else
-        //    {
-        //        msg.message = "Unauthorized";
-        //    }
-        //    return msg;
-        //}
+            if (hasKey && authorized)
+            {
+                if (ModelState.IsValid)
+                {
+                    group.name = model.name != null ? model.name : group.name;
+                    group.description = model.description != null ? model.description : group.description;
+                    group.status = model.status;
+                    bool success = await group.Update();
+
+                    if (success)
+                    {
+                        msg.message = "Group is updated successfully";
+                        msg.success = true;
+                        msg.data = group.Return;
+                    }
+                    else
+                    {
+                        msg.message = "Failed to update group";
+                    }
+                }
+                else
+                {
+                    msg.message = "Data is not completed";
+                }
+            }
+            else
+            {
+                msg.message = "Unauthorized";
+            }
+            return msg;
+        }
 
     }
 }
