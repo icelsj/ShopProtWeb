@@ -193,6 +193,8 @@ namespace ShopProtWeb.Models
 
                     this.device = newDevice;
                     this.user = newUser;
+
+                    success = true;
                 }
             }
             catch (Exception e)
