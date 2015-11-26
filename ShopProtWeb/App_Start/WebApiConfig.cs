@@ -27,11 +27,11 @@ namespace ShopProtWeb
                 defaults: new { id = RouteParameter.Optional }
             );
 
-            //config.Routes.MapHttpRoute(
-            //    name: "LinkDeviceApi",
-            //    routeTemplate: "api/Users/LinkDevice/{id}",
-            //    defaults: new { id = RouteParameter.Optional, controller ="LinkDevices" }
-            //);
+            config.Routes.MapHttpRoute(
+                name: "Memberships",
+                routeTemplate: "api/GroupLists/{id}/Memberships",
+                defaults: new { id = RouteParameter.Optional, controller = "Memberships" }
+            );
         }
     }
 }

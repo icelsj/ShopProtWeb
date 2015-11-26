@@ -11,6 +11,12 @@ namespace ShopProtWeb.Controllers
 {
     public class GroupListsController : ApiController
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <header>X-Access-Key</header>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<ApiMessage> Post(GroupListCreateModel model)
         {
@@ -31,10 +37,12 @@ namespace ShopProtWeb.Controllers
             {
                 if (ModelState.IsValid)
                 {
+                    DeviceOwner downer = new DeviceOwner() { device = new Device() { id = group.device_id } };
+                    bool founduser = await downer.FindByDeviceId();
                     bool success = await group.Create();
                     if (success)
                     {
-                        Membership member = new Membership() { device_id = group.device_id, group_id = group.id, status = MembershipStatus.Admin };
+                        Membership member = new Membership() { user_id = downer.user.id, group_id = group.id, status = MembershipStatus.Admin };
                         success = await member.Create();
                     }
 
@@ -77,9 +85,12 @@ namespace ShopProtWeb.Controllers
                 authorized = await device.FindByAccessKey(device.access_key, true);
                 group.device_id = device.id;
 
+                DeviceOwner downer = new DeviceOwner() { device = new Device() { id = group.device_id } };
+                await downer.FindByDeviceId();
+                
                 group.id = id;
                 bool hasauthorized = await group.FindById();
-                Membership member = new Membership() { device_id = group.device_id, group_id = group.id };
+                Membership member = new Membership() { user_id = downer.user.id, group_id = group.id };
                 if (hasauthorized)
                 { 
                     authorized = await member.FindByDeviceIdAndGroupId();

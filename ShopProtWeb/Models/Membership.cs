@@ -12,7 +12,7 @@ namespace ShopProtWeb.Models
     public class Membership : ShopProtModelBase
     {
         public Guid id { get; set; }
-        public Guid device_id { get; set; }
+        public Guid user_id { get; set; }
         public Guid group_id { get; set; }
         public MembershipStatus status { get; set; }
         public DateTime joined_at { get; set; }
@@ -22,7 +22,7 @@ namespace ShopProtWeb.Models
         {
             bool success = false;
             Exception err = null;
-            string sql = "INSERT INTO dbo.Memberships (device_id, group_id, status) OUTPUT INSERTED.id VALUES (@device_id, @group_id, @status)";
+            string sql = "INSERT INTO dbo.Memberships (user_id, group_id, status) OUTPUT INSERTED.id VALUES (@user_id, @group_id, @status)";
 
             if (db.State != ConnectionState.Open)
                 await db.OpenAsync();
@@ -31,7 +31,7 @@ namespace ShopProtWeb.Models
             try
             {
                 SqlCommand cmd = new SqlCommand(sql, db, trans);
-                cmd.Parameters.AddWithValue("@device_id", device_id);
+                cmd.Parameters.AddWithValue("@user_id", user_id);
                 cmd.Parameters.AddWithValue("@group_id", group_id);
                 cmd.Parameters.AddWithValue("@status", status);
                 object id = await cmd.ExecuteScalarAsync();
@@ -103,7 +103,7 @@ namespace ShopProtWeb.Models
         {
             bool success = false;
             Exception err = null;
-            string sql = "SELECT id, status, joined_at FROM dbo.Memberships WITH (NOLOCK) WHERE device_id LIKE @device_id AND group_id LIKE @group_id";
+            string sql = "SELECT id, status, joined_at FROM dbo.Memberships WITH (NOLOCK) WHERE user_id LIKE @user_id AND group_id LIKE @group_id";
 
             if (db.State != ConnectionState.Open)
                 await db.OpenAsync();
@@ -112,7 +112,7 @@ namespace ShopProtWeb.Models
             {
                 DataTable dt = new DataTable();
                 SqlCommand cmd = new SqlCommand(sql, db);
-                cmd.Parameters.AddWithValue("@device_id", device_id);
+                cmd.Parameters.AddWithValue("@user_id", user_id);
                 cmd.Parameters.AddWithValue("@group_id", group_id);
                 SqlDataAdapter adp = new SqlDataAdapter();
                 adp.SelectCommand = cmd;
@@ -120,6 +120,7 @@ namespace ShopProtWeb.Models
 
                 if (dt != null && !dt.HasErrors && dt.Rows.Count > 0)
                 {
+                    this.id = (Guid)dt.Rows[0]["id"];
                     this.status = (MembershipStatus)dt.Rows[0]["status"];
                     this.joined_at = (DateTime)dt.Rows[0]["joined_at"];
 
@@ -143,5 +144,25 @@ namespace ShopProtWeb.Models
             return success;
         }
 
+    }
+
+    public class MembershipCreateModel
+    {
+        //public string email { get; set; }
+        public string facebook_id { get; set; }
+    }
+
+    public class MembershipResponseModel
+    {
+        public Guid id { get; set; }
+        public GroupListResponseModel group { get; set; }
+        public UserResponseModel user { get; set; }
+        public IEnumerable<DeviceMemberStatusResponseModel> devices { get; set; }
+    }
+
+    public class DeviceMemberStatusResponseModel
+    {
+        public DeviceResponseModel device { get; set; }
+        public MembershipStatus status { get; set; }
     }
 }
