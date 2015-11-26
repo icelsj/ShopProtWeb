@@ -28,9 +28,15 @@ namespace ShopProtWeb
             );
 
             config.Routes.MapHttpRoute(
-                name: "Memberships",
+                name: "MembershipsApi",
                 routeTemplate: "api/GroupLists/{id}/Memberships",
                 defaults: new { id = RouteParameter.Optional, controller = "Memberships" }
+            );
+
+            config.Routes.MapHttpRoute(
+                name: "ItemListApi",
+                routeTemplate: "api/GroupLists/{id}/ItemLists",
+                defaults: new { id = RouteParameter.Optional, controller = "ItemLists" }
             );
         }
     }

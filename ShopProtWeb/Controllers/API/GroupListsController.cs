@@ -130,5 +130,38 @@ namespace ShopProtWeb.Controllers
             return msg;
         }
 
+        [HttpGet]
+        public async Task<ApiMessage> Get()
+        {
+            ApiMessage msg = new ApiMessage() { success = false };
+            Membership member = new Membership();
+            IEnumerable<string> xAccessKey;
+            bool hasKey = Request.Headers.TryGetValues("X-Access-Key", out xAccessKey);
+            bool authorized = false;
+
+            if (hasKey)
+            {
+                Device device = new Device() { access_key = xAccessKey.First() };
+                authorized = await device.FindByAccessKey(device.access_key, true);
+                DeviceOwner downer = new DeviceOwner() { device = new Device() { id = device.id } };
+                authorized = await downer.FindByDeviceId();
+                //Membership member = new Membership() { user_id = downer.user.id, group_id = id };
+                member.user_id = downer.user.id;
+            }
+
+            if (hasKey && authorized)
+            {
+                GroupList group = new GroupList();
+                msg.data = await group.ListByUserId(member.user_id);
+                msg.success = true;
+                msg.message = "List group successfully";
+            }
+            else
+            {
+                msg.message = "Unauthorized";
+            }
+
+            return msg;
+        }
     }
 }

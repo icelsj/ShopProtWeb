@@ -18,4 +18,25 @@ namespace ShopProtWeb.Models
         public DateTime created_at { get; set; }
         public Guid created_by { get; set; }
     }
+
+    public class ItemListCreateModel
+    {
+        public string name { get; set; }
+        public string description { get; set; }
+        public string category { get; set; }
+        public Guid category_id { get; set; }
+        public ItemStatus status { get; set; }
+    }
+
+    public class ItemListResponseModel
+    {
+        public Guid id { get; set; }
+        public string name { get; set; }
+        public string description { get; set; }
+        public string category { get; set; }
+        public Guid category_id { get; set; }
+        public ItemStatus status { get; set; }
+        public DateTime created_at { get; set; }
+        public Guid created_by { get; set; }
+    }
 }

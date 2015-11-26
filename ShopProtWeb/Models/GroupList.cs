@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Data.SqlClient;
@@ -167,6 +168,55 @@ namespace ShopProtWeb.Models
             return success;
         }
 
+        public async Task<List<GroupListResponseModel>> ListByUserId(Guid user_id)
+        {
+            List<GroupListResponseModel> groups = new List<GroupListResponseModel>();
+            Exception err = null;
+            string sql = "SELECT grouplists.id, grouplists.name, grouplists.description, grouplists.status, grouplists.created_at FROM dbo.GroupLists WITH (NOLOCK), dbo.Memberships WITH (NOLOCK) WHERE grouplists.id = memberships.group_id AND memberships.user_id = @user_id AND grouplists.status = 1 AND memberships.status != 0";
+
+            if (db.State != ConnectionState.Open)
+                await db.OpenAsync();
+
+            try
+            {
+                DataTable dt = new DataTable();
+                SqlCommand cmd = new SqlCommand(sql, db);
+                cmd.Parameters.AddWithValue("@user_id", user_id);
+                SqlDataAdapter adp = new SqlDataAdapter();
+                adp.SelectCommand = cmd;
+                adp.Fill(dt);
+
+                if (dt != null && !dt.HasErrors && dt.Rows.Count > 0)
+                {
+                    foreach (DataRow dr in dt.Rows)
+                    {
+                        GroupList group = new GroupList();
+                        group.id = (Guid)dr["id"];
+                        group.name = dr["name"].ToString();
+                        group.description = dr["description"].ToString();
+                        group.status = (GroupStatus)dr["status"];
+                        group.created_at = (DateTime)dr["created_at"];
+
+                        groups.Add(group.Return);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                err = e;
+            }
+            finally
+            {
+                db.Close();
+            }
+
+            if (err != null)
+            {
+                throw err;
+            }
+
+            return groups;
+        }
     }
 
     public class GroupListCreateModel
