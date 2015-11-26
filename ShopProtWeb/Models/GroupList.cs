@@ -34,7 +34,7 @@ namespace ShopProtWeb.Models
         {
             get
             {
-                return new GroupListResponseModel() { id = this.id, name = this.name, description = this.description, status = this.status };
+                return new GroupListResponseModel() { id = this.id, name = this.name, description = this.description, status = this.status, created_at = this.created_at };
             }
         }
 
@@ -79,7 +79,7 @@ namespace ShopProtWeb.Models
             {
                 throw err;
             }
-
+            this.created_at = DateTime.Now;
             return success;
         }
 

@@ -512,5 +512,13 @@
             </summary>
             <returns>device_id</returns>
         </member>
+        <member name="M:ShopProtWeb.Controllers.GroupListsController.Post(ShopProtWeb.Models.GroupListCreateModel)">
+            <summary>
+            
+            </summary>
+            <header>X-Access-Key</header>
+            <param name="model"></param>
+            <returns></returns>
+        </member>
     </members>
 </doc>

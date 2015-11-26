@@ -84,6 +84,9 @@ namespace ShopProtWeb.Controllers.API
                         installed = await user.Register();
                     }
 
+                    downer.device = device;
+                    downer.user = user;
+
                     //try register user and device first
                     if (installed)
                     {
