@@ -148,7 +148,7 @@ namespace ShopProtWeb.Models
 
     public class MembershipCreateModel
     {
-        //public string email { get; set; }
+        public MembershipStatus status { get; set; }
         public string facebook_id { get; set; }
     }
 
