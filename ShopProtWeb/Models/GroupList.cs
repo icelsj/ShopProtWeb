@@ -217,6 +217,7 @@ namespace ShopProtWeb.Models
 
             return groups;
         }
+
     }
 
     public class GroupListCreateModel
