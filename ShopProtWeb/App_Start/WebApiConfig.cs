@@ -35,8 +35,8 @@ namespace ShopProtWeb
 
             config.Routes.MapHttpRoute(
                 name: "ItemListApi",
-                routeTemplate: "api/GroupLists/{id}/ItemLists",
-                defaults: new { id = RouteParameter.Optional, controller = "ItemLists" }
+                routeTemplate: "api/GroupLists/{id}/ItemLists/{iid}",
+                defaults: new { id = RouteParameter.Optional, controller = "ItemLists", iid = RouteParameter.Optional }
             );
         }
     }
