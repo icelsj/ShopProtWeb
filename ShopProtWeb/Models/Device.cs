@@ -19,27 +19,27 @@ namespace ShopProtWeb.Models
         public string access_key { get; set; }
         public string app_token { get; set; }
         public Guid user_id { get; set; }
-
+        
         public Device()
         {
-        }
+                }
 
         public Device(DeviceRegisterModel model)
-        {
+                {
             this.uuid = model.uuid;
             this.os = model.os;
             this.model = model.model;
             this.app_token = model.app_token;
             this.user_id = model.user_id;
-        }
+                }
 
         public DeviceResponseModel Return
-        {
+            {
             get
             {
-                return new DeviceResponseModel() { id = this.id, os = this.os, model = this.model, access_key = this.access_key, uuid = this.uuid };
+                db.Close();
             }
-        }
+            }
 
         private async Task<string> GenerateAccessKey()
         {
@@ -53,7 +53,7 @@ namespace ShopProtWeb.Models
                 guidstr = guidstr.Replace("+", "");
                 guidstr = guidstr.Replace("-", "");
                 guidstr = guidstr.Replace("/", "");
-                
+
                 notfound = await this.FindByAccessKey(guidstr, false);
 
             } while (notfound);
@@ -83,11 +83,11 @@ namespace ShopProtWeb.Models
                 {
                     if (replace)
                     {
-                        this.id = (Guid)dt.Rows[0]["id"];
-                        this.uuid = dt.Rows[0]["uuid"].ToString();
-                        this.os = dt.Rows[0]["os"].ToString();
-                        this.model = dt.Rows[0]["model"].ToString();
-                        this.installed_at = (DateTime)dt.Rows[0]["installed_at"];
+                    this.id = (Guid)dt.Rows[0]["id"];
+                    this.uuid = dt.Rows[0]["uuid"].ToString();
+                    this.os = dt.Rows[0]["os"].ToString();
+                    this.model = dt.Rows[0]["model"].ToString();
+                    this.installed_at = (DateTime)dt.Rows[0]["installed_at"];
                     }
                     success = true;
                 }
@@ -110,7 +110,7 @@ namespace ShopProtWeb.Models
         }
 
         public async Task<bool> Install()
-        {
+    {
             //scope to generate access key first
             this.access_key = await this.GenerateAccessKey();
 
@@ -317,7 +317,7 @@ namespace ShopProtWeb.Models
         public string app_token { get; set; }
         public Guid user_id { get; set; }
     }
-
+        
     public class DeviceResponseModel
     {
         public Guid id { get; set; }
