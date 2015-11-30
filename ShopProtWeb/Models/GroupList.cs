@@ -19,6 +19,8 @@ namespace ShopProtWeb.Models
         public DateTime created_at { get; set; }
         public Guid device_id { get; set; }
 
+        public List<UserResponseModel> members { get; set; }
+
         public GroupList()
         {
 
@@ -35,7 +37,7 @@ namespace ShopProtWeb.Models
         {
             get
             {
-                return new GroupListResponseModel() { id = this.id, name = this.name, description = this.description, status = this.status, created_at = this.created_at };
+                return new GroupListResponseModel() { id = this.id, name = this.name, description = this.description, status = this.status, created_at = this.created_at, members = this.members };
             }
         }
 
@@ -147,7 +149,10 @@ namespace ShopProtWeb.Models
                     this.description = dt.Rows[0]["description"].ToString();
                     this.status = (GroupStatus)dt.Rows[0]["status"];
                     this.created_at = (DateTime)dt.Rows[0]["created_at"];
-                    
+
+                    Membership member = new Membership();
+                    this.members = await member.ListGroupMember(this.id);
+
                     success = true;
                 }
             }
@@ -197,6 +202,9 @@ namespace ShopProtWeb.Models
                         group.status = (GroupStatus)dr["status"];
                         group.created_at = (DateTime)dr["created_at"];
 
+                        Membership member = new Membership();
+                        group.members = await member.ListGroupMember(group.id);
+
                         groups.Add(group.Return);
                     }
                 }
@@ -237,5 +245,7 @@ namespace ShopProtWeb.Models
         public string description { get; set; }
         public GroupStatus status { get; set; }
         public DateTime created_at { get; set; }
+
+        public List<UserResponseModel> members { get; set; }
     }
 }

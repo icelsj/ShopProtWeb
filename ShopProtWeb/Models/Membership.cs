@@ -144,6 +144,57 @@ namespace ShopProtWeb.Models
             return success;
         }
 
+        public async Task<List<UserResponseModel>> ListGroupMember(Guid groupid)
+        {
+            List<UserResponseModel> users = new List<UserResponseModel>();
+            Exception err = null;
+            string sql = "SELECT users.id, users.facebook_id, users.gender, users.email, users.name, users.first_name, users.last_name FROM dbo.Memberships WITH (NOLOCK), dbo.Users WITH (NOLOCK) WHERE user_id LIKE users.id AND group_id LIKE @group_id";
+
+            if (db.State != ConnectionState.Open)
+                await db.OpenAsync();
+
+            try
+            {
+                DataTable dt = new DataTable();
+                SqlCommand cmd = new SqlCommand(sql, db);
+                cmd.Parameters.AddWithValue("@group_id", groupid);
+                SqlDataAdapter adp = new SqlDataAdapter();
+                adp.SelectCommand = cmd;
+                adp.Fill(dt);
+
+                if (dt != null && !dt.HasErrors && dt.Rows.Count > 0)
+                {
+                    foreach (DataRow dr in dt.Rows)
+                    {
+                        UserResponseModel user = new UserResponseModel();
+                        user.id = (Guid)dr["id"];
+                        user.facebook_id = dr["facebook_id"].ToString();
+                        user.gender = dr["gender"].ToString();
+                        user.email = dr["email"].ToString();
+                        user.name = dr["name"].ToString();
+                        user.first_name = dr["first_name"].ToString();
+                        user.last_name = dr["last_name"].ToString();
+
+                        users.Add(user);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                err = e;
+            }
+            finally
+            {
+                db.Close();
+            }
+
+            if (err != null)
+            {
+                throw err;
+            }
+
+            return users;
+        }
     }
 
     public class MembershipCreateModel
