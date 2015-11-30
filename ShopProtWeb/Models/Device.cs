@@ -37,7 +37,7 @@ namespace ShopProtWeb.Models
         {
             get
             {
-                return new DeviceResponseModel() { id = this.id, os = this.os, model = this.model, access_key = this.access_key };
+                return new DeviceResponseModel() { id = this.id, os = this.os, model = this.model, access_key = this.access_key, uuid = this.uuid };
             }
         }
 
@@ -321,6 +321,7 @@ namespace ShopProtWeb.Models
     public class DeviceResponseModel
     {
         public Guid id { get; set; }
+        public string uuid { get; set; }
         public string os { get; set; }
         public string model { get; set; }
         public string access_key { get; set; }
