@@ -34,12 +34,12 @@ namespace ShopProtWeb.Models
                 }
 
         public DeviceResponseModel Return
-            {
+        {
             get
             {
-                db.Close();
+                return new DeviceResponseModel() { id = this.id, os = this.os, model = this.model, access_key = this.access_key, uuid = this.uuid };
             }
-            }
+        }
 
         private async Task<string> GenerateAccessKey()
         {
